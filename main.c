@@ -14,7 +14,7 @@ int main(void)
     printf("Algo Project 2\n");
 
     int city_count; 
-    City* cities = read_cities("files/example-input-1.txt", &city_count);
+    City* cities = read_cities("files/example-input-2.txt", &city_count);
 
     if(cities == NULL)
     {
@@ -38,7 +38,8 @@ int main(void)
     while(current_id != -1)
     {
         visited_city_count++;
-        current_id = next_city_selector_first_closing(cities, current_id, city_count, &time, &distance);
+        // current_id = next_city_selector_first_closing(cities, current_id, city_count, &time, &distance);
+        current_id = next_city_selector_least_score(cities, current_id, city_count, &time, &distance);
         if(current_id != -1)
         {
             total_distance += distance;
