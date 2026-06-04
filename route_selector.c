@@ -10,58 +10,53 @@ int distance_calculator(City city_1, City city_2);
 int next_city_selector_least_score(City* cities, int current_city_id, int city_count, int* current_time, int* length)
 {
     int selected_id = -1;
-    int time_calculated;
-    double score = 1000000;
-    double score_calculated;
-    double wait_score;
-    double remaining_time_score;
+    int selected_distance = 0;
+    double best_score = 1000000000.0;
 
-    for(int i = 0 ; i < city_count; i++)
+    for(int i = 0; i < city_count; i++)
     {
         if((cities[i].id != current_city_id) && (cities[i].visited == 0))
         {
-            time_calculated = distance_calculator(cities[current_city_id], cities[i]);
-            if((*current_time + time_calculated) < cities[i].close)
+            int dist = distance_calculator(cities[current_city_id], cities[i]);
+            int arrival = *current_time + dist;
+
+            if(arrival <= cities[i].close)
             {
-                if (*current_time + time_calculated > cities[current_city_id].open)
+                int wait_score = 0;
+
+                if(arrival < cities[i].open)
+                    wait_score = cities[i].open - arrival;
+
+                // int remaining_time_score = cities[i].close - arrival;
+
+                // double score_calculated =
+                //     dist +
+                //     (0.2 * wait_score) +
+                //     (0.5 * remaining_time_score);
+
+                double score_calculated = dist + 0.5 * wait_score;
+
+                if(score_calculated < best_score)
                 {
-                    wait_score = 0;
-                }
-                else{
-                    wait_score = cities[current_city_id].open - (*current_time + time_calculated);
-                }
-
-                remaining_time_score = cities[current_city_id].close - (*current_time + time_calculated);
-
-                score_calculated = time_calculated + (0.2 * wait_score) + (0.5 * remaining_time_score);
-
-                if(score_calculated < score)
-                {
-                    score = score_calculated;
+                    best_score = score_calculated;
                     selected_id = cities[i].id;
+                    selected_distance = dist;
                 }
-            }
-            else{
-                // printf("Time Calc= %d\n", *current_time + time_calculated);
-                // printf("Close Time = %d\n", cities[i].close);
-                
             }
         }
     }
 
     if(selected_id != -1)
     {
+        int arrival = *current_time + selected_distance;
+
         cities[selected_id].visited = 1;
-        if(cities[selected_id].open > *current_time + time_calculated)
-        {
+        *length = selected_distance;
+
+        if(arrival < cities[selected_id].open)
             *current_time = cities[selected_id].open;
-        }
         else
-        {
-            time_calculated = distance_calculator(cities[current_city_id], cities[selected_id]);
-            *length = time_calculated;
-            *current_time = *current_time + time_calculated;
-        }
+            *current_time = arrival;
     }
 
     return selected_id;
