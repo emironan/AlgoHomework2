@@ -1,11 +1,86 @@
 #include "route_selector.h"
 #include <math.h>
-
+#include <stdlib.h>
 #include <stdio.h>
 
 
-int distance_calculator(City city_1, City city_2);
+// int distance_calculator(City city_1, City city_2);
 
+int next_city_selector_randomized_top3(City* cities, int current_city_id, int city_count, int* current_time, int* length)
+{
+    int candidate_ids[3] = {-1, -1, -1};
+    int candidate_distances[3] = {0, 0, 0};
+    double candidate_scores[3] = {
+        1000000000.0,
+        1000000000.0,
+        1000000000.0
+    };
+
+    for(int i = 0; i < city_count; i++)
+    {
+        if((cities[i].id != current_city_id) && (cities[i].visited == 0))
+        {
+            int dist = distance_calculator(cities[current_city_id], cities[i]);
+            int arrival = *current_time + dist;
+
+            if(arrival <= cities[i].close)
+            {
+                int wait_score = 0;
+
+                if(arrival < cities[i].open)
+                    wait_score = cities[i].open - arrival;
+
+                double score_calculated = dist + 0.5 * wait_score;
+
+                for(int k = 0; k < 3; k++)
+                {
+                    if(score_calculated < candidate_scores[k])
+                    {
+                        for(int m = 2; m > k; m--)
+                        {
+                            candidate_scores[m] = candidate_scores[m - 1];
+                            candidate_ids[m] = candidate_ids[m - 1];
+                            candidate_distances[m] = candidate_distances[m - 1];
+                        }
+
+                        candidate_scores[k] = score_calculated;
+                        candidate_ids[k] = cities[i].id;
+                        candidate_distances[k] = dist;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    int valid_count = 0;
+
+    for(int i = 0; i < 3; i++)
+    {
+        if(candidate_ids[i] != -1)
+            valid_count++;
+    }
+
+    if(valid_count == 0)
+        return -1;
+
+    int selected_index = rand() % valid_count;
+
+    int selected_id = candidate_ids[selected_index];
+    int selected_distance = candidate_distances[selected_index];
+
+    int arrival = *current_time + selected_distance;
+
+    cities[selected_id].visited = 1;
+    *length = selected_distance;
+
+    if(arrival < cities[selected_id].open)
+        *current_time = cities[selected_id].open;
+    else
+        *current_time = arrival;
+
+    return selected_id;
+}
 
 int next_city_selector_least_score(City* cities, int current_city_id, int city_count, int* current_time, int* length)
 {

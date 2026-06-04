@@ -3,6 +3,9 @@
 #include "cities.h"
 #include "first_city_selector.h"
 #include "route_selector.h"
+#include <time.h>
+
+#define RANDOM_TRIALS_PER_START 10
 
 typedef struct
 {
@@ -13,7 +16,7 @@ typedef struct
 } RouteResult;
 
 
-RouteResult run_route_from_start(City* cities, int city_count, int first_city_id);
+RouteResult run_route_from_start(City* cities, int city_count, int first_city_id, int randomized);
 void reset_visited(City* cities, int city_count);
 int write_output_file(const char* filename, int* route, int visited_count, int total_distance, int total_time);
 
@@ -26,9 +29,12 @@ int main(void)
 {
     printf("Algo Project 2\n");
 
+    srand((unsigned int)time(NULL));
+
     int city_count; 
     // City* cities = read_cities("files/example-input-3.txt", &city_count);
-    City* cities = read_cities("files/test-input-4-tsptw.txt", &city_count);
+    // City* cities = read_cities("files/test-input-4-tsptw.txt", &city_count);
+    City* cities = read_cities("files/test-input-3-tsptw.txt", &city_count);
 
     if(cities == NULL)
     {
@@ -60,27 +66,57 @@ int main(void)
         if(first_city_id == -1)
             continue;
 
-        RouteResult current_result = run_route_from_start(
+        RouteResult normal_result = run_route_from_start(
             cities,
             city_count,
-            first_city_id
+            first_city_id,
+            0
         );
 
-        printf("Start %d -> %d %d %d\n",
+        printf("Start %d normal -> %d %d %d\n",
             first_city_id,
-            current_result.visited_count,
-            current_result.total_distance,
-            current_result.total_time);
+            normal_result.visited_count,
+            normal_result.total_distance,
+            normal_result.total_time);
 
-        if(current_result.visited_count > best_result.visited_count)
+        if(normal_result.visited_count > best_result.visited_count ||
+        (normal_result.visited_count == best_result.visited_count &&
+            normal_result.total_distance < best_result.total_distance))
         {
-            best_result = current_result;
+            best_result = normal_result;
         }
-        else if(current_result.visited_count == best_result.visited_count &&
-                current_result.total_distance < best_result.total_distance)
+
+        int best_random_count = -1;
+
+        for(int trial = 0; trial < RANDOM_TRIALS_PER_START; trial++)
         {
-            best_result = current_result;
+            RouteResult random_result = run_route_from_start(
+                cities,
+                city_count,
+                first_city_id,
+                1
+            );
+
+            if(random_result.visited_count > best_random_count)
+                best_random_count = random_result.visited_count;
+
+            if(random_result.visited_count > best_result.visited_count ||
+            (random_result.visited_count == best_result.visited_count &&
+                random_result.total_distance < best_result.total_distance))
+            {
+                best_result = random_result;
+
+                printf("  NEW GLOBAL BEST trial %d -> %d %d %d\n",
+                    trial,
+                    best_result.visited_count,
+                    best_result.total_distance,
+                    best_result.total_time);
+            }
         }
+
+        printf("Start %d random best -> %d\n",
+            first_city_id,
+            best_random_count);
     }
 
     printf("BEST: %d %d %d\n",
@@ -89,7 +125,7 @@ int main(void)
         best_result.total_time);
 
     write_output_file(
-        "files/output-4.txt",
+        "files/test-output-3_randomized.txt",
         best_result.route,
         best_result.visited_count,
         best_result.total_distance,
@@ -101,7 +137,7 @@ int main(void)
     return 0;
 }
 
-RouteResult run_route_from_start(City* cities, int city_count, int first_city_id)
+RouteResult run_route_from_start(City* cities, int city_count, int first_city_id, int randomized)
 {
     RouteResult result;
 
@@ -111,7 +147,7 @@ RouteResult run_route_from_start(City* cities, int city_count, int first_city_id
 
     reset_visited(cities, city_count);
 
-    int time = cities[first_city_id].open;
+    int current_time = cities[first_city_id].open;
     int distance = 0;
     int current_id = first_city_id;
 
@@ -122,13 +158,26 @@ RouteResult run_route_from_start(City* cities, int city_count, int first_city_id
     {
         result.visited_count++;
 
-        current_id = next_city_selector_least_score(
-            cities,
-            current_id,
-            city_count,
-            &time,
-            &distance
-        );
+        if(randomized)
+        {
+            current_id = next_city_selector_randomized_top3(
+                cities,
+                current_id,
+                city_count,
+                &current_time,
+                &distance
+            );
+        }
+        else
+        {
+            current_id = next_city_selector_least_score(
+                cities,
+                current_id,
+                city_count,
+                &current_time,
+                &distance
+            );
+        }
 
         if(current_id != -1)
         {
@@ -143,7 +192,7 @@ RouteResult run_route_from_start(City* cities, int city_count, int first_city_id
     );
 
     result.total_distance += return_distance;
-    result.total_time = time + return_distance;
+    result.total_time = current_time + return_distance;
 
     return result;
 }
