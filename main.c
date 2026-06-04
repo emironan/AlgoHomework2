@@ -4,6 +4,17 @@
 #include "first_city_selector.h"
 #include "route_selector.h"
 
+typedef struct
+{
+    int route[55000];
+    int visited_count;
+    int total_distance;
+    int total_time;
+} RouteResult;
+
+
+RouteResult run_route_from_start(City* cities, int city_count, int first_city_id);
+void reset_visited(City* cities, int city_count);
 int write_output_file(const char* filename, int* route, int visited_count, int total_distance, int total_time);
 
 int cities_visited_id[55000];
@@ -27,49 +38,122 @@ int main(void)
 
     printf("City Count = %d\n", city_count);
     
-    int time;
+    int start_candidates[20];
+    int candidate_count = 20;
 
-    // int first_city_id = select_first_city(cities, city_count, &time);
-    int first_city_id = select_first_city_algo2(cities, city_count, &time);
-    cities_visited_id[visited_city_count] = first_city_id; 
-    int current_id = first_city_id;
+    get_best_20_start_candidates_algo2(
+        cities,
+        city_count,
+        start_candidates,
+        candidate_count
+    );
 
-    int distance;
+    RouteResult best_result;
+    best_result.visited_count = -1;
+    best_result.total_distance = 0;
+    best_result.total_time = 0;
 
-    while(current_id != -1)
+    for(int i = 0; i < candidate_count; i++)
     {
-        visited_city_count++;
-        // current_id = next_city_selector_first_closing(cities, current_id, city_count, &time, &distance);
-        current_id = next_city_selector_least_score(cities, current_id, city_count, &time, &distance);
-        if(current_id != -1)
+        int first_city_id = start_candidates[i];
+
+        if(first_city_id == -1)
+            continue;
+
+        RouteResult current_result = run_route_from_start(
+            cities,
+            city_count,
+            first_city_id
+        );
+
+        printf("Start %d -> %d %d %d\n",
+            first_city_id,
+            current_result.visited_count,
+            current_result.total_distance,
+            current_result.total_time);
+
+        if(current_result.visited_count > best_result.visited_count)
         {
-            total_distance += distance;
-            cities_visited_id[visited_city_count] = current_id;
+            best_result = current_result;
+        }
+        else if(current_result.visited_count == best_result.visited_count &&
+                current_result.total_distance < best_result.total_distance)
+        {
+            best_result = current_result;
         }
     }
 
-    int return_distance = distance_calculator(cities[cities_visited_id[visited_city_count - 1]], cities[first_city_id]);
-    total_distance += return_distance;
-    total_time = time + return_distance;
-    
-    printf("%d %d %d\n", visited_city_count, total_distance, total_time);
-
-    // for(int i = 0; i < visited_city_count; i++)
-    // {
-    //     printf("%d\n", cities_visited_id[i]);
-    // }
+    printf("BEST: %d %d %d\n",
+        best_result.visited_count,
+        best_result.total_distance,
+        best_result.total_time);
 
     write_output_file(
-    "files/output-3.txt",
-    cities_visited_id,
-    visited_city_count,
-    total_distance,
-    total_time
+        "files/output-4.txt",
+        best_result.route,
+        best_result.visited_count,
+        best_result.total_distance,
+        best_result.total_time
     );
 
     free(cities);
 
     return 0;
+}
+
+RouteResult run_route_from_start(City* cities, int city_count, int first_city_id)
+{
+    RouteResult result;
+
+    result.visited_count = 0;
+    result.total_distance = 0;
+    result.total_time = 0;
+
+    reset_visited(cities, city_count);
+
+    int time = cities[first_city_id].open;
+    int distance = 0;
+    int current_id = first_city_id;
+
+    cities[first_city_id].visited = 1;
+    result.route[result.visited_count] = first_city_id;
+
+    while(current_id != -1)
+    {
+        result.visited_count++;
+
+        current_id = next_city_selector_least_score(
+            cities,
+            current_id,
+            city_count,
+            &time,
+            &distance
+        );
+
+        if(current_id != -1)
+        {
+            result.total_distance += distance;
+            result.route[result.visited_count] = current_id;
+        }
+    }
+
+    int return_distance = distance_calculator(
+        cities[result.route[result.visited_count - 1]],
+        cities[first_city_id]
+    );
+
+    result.total_distance += return_distance;
+    result.total_time = time + return_distance;
+
+    return result;
+}
+
+void reset_visited(City* cities, int city_count)
+{
+    for(int i = 0; i < city_count; i++)
+    {
+        cities[i].visited = 0;
+    }
 }
 
 

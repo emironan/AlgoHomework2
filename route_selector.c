@@ -27,13 +27,6 @@ int next_city_selector_least_score(City* cities, int current_city_id, int city_c
                 if(arrival < cities[i].open)
                     wait_score = cities[i].open - arrival;
 
-                // int remaining_time_score = cities[i].close - arrival;
-
-                // double score_calculated =
-                //     dist +
-                //     (0.2 * wait_score) +
-                //     (0.5 * remaining_time_score);
-
                 double score_calculated = dist + 0.5 * wait_score;
 
                 if(score_calculated < best_score)
