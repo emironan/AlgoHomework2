@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
     int start_candidates[20];
     int candidate_count = 20;
 
-    get_best_20_start_candidates_algo2(
+    get_best_20_start_candidates(
         cities,
         city_count,
         start_candidates,
