@@ -64,7 +64,29 @@ int next_city_selector_randomized_top3(City* cities, int current_city_id, int ci
     if(valid_count == 0)
         return -1;
 
-    int selected_index = rand() % valid_count;
+    int r = rand() % 100;
+    int selected_index = 0;
+
+    if(valid_count == 1)
+    {
+        selected_index = 0;
+    }
+    else if(valid_count == 2)
+    {
+        if(r < 85)
+            selected_index = 0;
+        else
+            selected_index = 1;
+    }
+    else
+    {
+        if(r < 85)
+            selected_index = 0;
+        else if(r < 95)
+            selected_index = 1;
+        else
+            selected_index = 2;
+    }
 
     int selected_id = candidate_ids[selected_index];
     int selected_distance = candidate_distances[selected_index];

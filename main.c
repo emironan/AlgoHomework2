@@ -5,7 +5,10 @@
 #include "route_selector.h"
 #include <time.h>
 
-#define RANDOM_TRIALS_PER_START 10
+#define RANDOM_TRIALS_PER_START 100
+
+char* input_file = "files/test-input-4-tsptw.txt";
+char* output_file = "files/test-output-4-tsptw.txt";
 
 typedef struct
 {
@@ -32,9 +35,7 @@ int main(void)
     srand((unsigned int)time(NULL));
 
     int city_count; 
-    // City* cities = read_cities("files/example-input-3.txt", &city_count);
-    // City* cities = read_cities("files/test-input-4-tsptw.txt", &city_count);
-    City* cities = read_cities("files/test-input-3-tsptw.txt", &city_count);
+    City* cities = read_cities(input_file, &city_count);
 
     if(cities == NULL)
     {
@@ -125,7 +126,7 @@ int main(void)
         best_result.total_time);
 
     write_output_file(
-        "files/test-output-3_randomized.txt",
+        output_file,
         best_result.route,
         best_result.visited_count,
         best_result.total_distance,
