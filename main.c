@@ -7,9 +7,6 @@
 
 #define RANDOM_TRIALS_PER_START 100
 
-char* input_file = "files/test-input-4-tsptw.txt";
-char* output_file = "files/test-output-4-tsptw.txt";
-
 typedef struct
 {
     int route[55000];
@@ -28,8 +25,17 @@ int visited_city_count = 0;
 int total_time = 0;
 int total_distance = 0;
 
-int main(void)
+int main(int argc, char *argv[])
 {
+    if (argc != 3)
+    {
+        fprintf(stderr, "Usage: %s input_file_name output_file_name\n", argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    char *input_file = argv[1];
+    char *output_file = argv[2];
+
     printf("Algo Project 2\n");
 
     srand((unsigned int)time(NULL));
